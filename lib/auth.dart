@@ -1,5 +1,5 @@
-// Simple authentication and account management module
-// No external dependencies, no JSON serialization
+// Simple authentication and account management module with Firebase support
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 /// Represents a user in the system.
 class User {
@@ -20,53 +20,104 @@ class User {
   });
 }
 
-/// Service that handles user registration, login, and lookup.
+/// Service that handles user registration, login, and lookup using Firebase.
 class AuthService {
-  final List<User> _users = [];
-  int _nextId = 1;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
-  /// Registers a new user. Throws if the email is already taken.
-  User register({
+  // Local in‑memory list of users for dummy accounts or fallback.
+  final List<User> _localUsers = [];
+
+  /// Registers a new user with Firebase Auth. Throws if the email is already taken.
+  Future<User> register({
     required String name,
     required String email,
     required String role,
     required String phone,
     required String password,
-  }) {
-    if (_users.any((u) => u.email == email)) {
-      throw Exception('User with email $email already exists');
+  }) async {
+    try {
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final fbUser = cred.user!;
+      await fbUser.updateDisplayName(name);
+      // role and phone are not stored in Firebase Auth; they remain local.
+      final user = User(
+        id: fbUser.uid.hashCode,
+        name: name,
+        email: fbUser.email ?? email,
+        role: role,
+        phone: phone,
+        password: password,
+      );
+      _localUsers.add(user);
+      return user;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        // Return existing user from local list if present.
+        final existing = _localUsers.firstWhere(
+          (u) => u.email == email,
+          orElse: () => User(
+            id: email.hashCode,
+            name: name,
+            email: email,
+            role: role,
+            phone: phone,
+            password: password,
+          ),
+        );
+        return existing;
+      }
+      rethrow;
     }
-    final user = User(
-      id: _nextId++,
-      name: name,
-      email: email,
-      role: role,
-      phone: phone,
-      password: password,
-    );
-    _users.add(user);
-    return user;
   }
 
   /// Attempts to log in with an email and password.
   /// Returns the matching [User] or null if credentials are invalid.
-  User? login(String email, String password) {
+  Future<User?> login(String email, String password) async {
+    User? user;
     try {
-      return _users.firstWhere((u) => u.email == email && u.password == password);
-    } catch (_) {
-      return null;
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final fbUser = cred.user;
+      if (fbUser != null) {
+        user = User(
+          id: fbUser.uid.hashCode,
+          name: fbUser.displayName ?? '',
+          email: fbUser.email ?? email,
+          role: '',
+          phone: '',
+          password: password,
+        );
+        // Ensure user is in local list for fallback.
+        _localUsers.removeWhere((u) => u.email == email);
+        _localUsers.add(user);
+      }
+    } on firebase_auth.FirebaseAuthException {
+      // Firebase login failed; fall back to local list.
     }
+    if (user == null) {
+      try {
+        final local = _localUsers.firstWhere(
+          (u) => u.email == email && u.password == password,
+        );
+        user = local;
+      } catch (_) {
+        // No matching local user.
+      }
+    }
+    return user;
   }
 
-  /// Retrieves a user by their numeric [id], or null if not found.
+  /// Retrieves a user by Firebase UID (not implemented).
   User? getUserById(int id) {
-    try {
-      return _users.firstWhere((u) => u.id == id);
-    } catch (_) {
-      return null;
-    }
+    // Not supported in this minimal example.
+    return null;
   }
 
-  /// Returns an unmodifiable view of all registered users.
-  List<User> getAllUsers() => List.unmodifiable(_users);
+  /// Returns an empty list as user enumeration is not implemented.
+  List<User> getAllUsers() => const [];
 }

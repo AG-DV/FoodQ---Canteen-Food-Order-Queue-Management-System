@@ -1,5 +1,35 @@
 Added files:
 - lib/auth.dart: authentication and account management module with User entity (id, name, email, role, phone) and AuthService for registration and login.
 - lib/auth_ui.dart: Flutter UI for registration and login using AuthService.
+
 Modified files:
 - lib/main.dart: import auth_ui, added route '/auth', added button to navigate to Auth UI.
+
+--- New changes ---
+- Updated pubspec.yaml to add firebase_core and firebase_auth dependencies.
+- Modified lib/auth.dart to use Firebase Auth for registration and login, making methods asynchronous and returning custom User objects.
+- Refactored lib/auth_ui.dart to handle async registration/login, show SnackBars, and navigate to the home page on successful login.
+- Updated lib/main.dart to initialize Firebase, create dummy test accounts (test1@example.com / password123 and test2@example.com / password456), set AuthPage as the default route, and added routes for login and home.
+- Adjusted imports, routing, and UI logic accordingly.
+
+--- Debugging changes ---
+- Added mounted checks (`if (!mounted) return;`) in auth_ui.dart to avoid using BuildContext across async gaps.
+- Fixed Firebase initialization by importing `firebase_options.dart` and passing options to `Firebase.initializeApp`.
+- Restored missing `firebase_auth` import and added it back to main.dart.
+- Created placeholder `firebase_options.dart` with structure for real Firebase configuration.
+- Updated imports and initialization to resolve `Method not found: 'handleThenable'` errors caused by mismatched Firebase setup.
+
+--- UI Refactor changes ---
+- Refactored lib/auth_ui.dart: AuthPage now shows only login form and includes a "Register" button that navigates to a new RegisterPage.
+- Added RegisterPage widget for user registration with name, email, role, phone, and password fields.
+- Updated lib/main.dart routes to include '/register' pointing to RegisterPage.
+- Landing page (home) remains AuthPage (login page).
+- Added mounted checks in async handlers to avoid BuildContext usage across async gaps.
+
+--- Dummy account fix ---
+- Added AuthService local in-memory user list (`_localUsers`) to store dummy accounts and provide fallback when Firebase is not configured.
+- Updated `register` to catch `email-already-in-use` and return existing local user, and to add newly created users to `_localUsers`.
+- Updated `login` to try Firebase login first, then fall back to local list if Firebase fails.
+- Modified `lib/main.dart` to import `firebase_core` and `firebase_options`, instantiate `AuthService` globally, and replace direct Firebase user creation with calls to `AuthService.register` for dummy accounts.
+- Removed unused `firebase_auth` import from `lib/main.dart`.
+- Ensured `AuthPage` remains the landing page and added a Register page route.
