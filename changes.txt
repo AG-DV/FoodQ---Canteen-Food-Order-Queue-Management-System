@@ -1,0 +1,5 @@
+Added files:
+- lib/auth.dart: authentication and account management module with User entity (id, name, email, role, phone) and AuthService for registration and login.
+- lib/auth_ui.dart: Flutter UI for registration and login using AuthService.
+Modified files:
+- lib/main.dart: import auth_ui, added route '/auth', added button to navigate to Auth UI.

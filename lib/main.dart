@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'auth_ui.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +31,9 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
+      routes: {
+        '/auth': (context) => const AuthPage(),
+      },
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -108,6 +112,10 @@ class _MyHomePageState extends State<MyHomePage> {
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pushNamed('/auth'),
+              child: const Text('Auth UI'),
             ),
           ],
         ),
