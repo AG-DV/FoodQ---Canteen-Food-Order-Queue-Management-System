@@ -1,116 +1,33 @@
 import 'package:flutter/material.dart';
-import 'auth.dart';
-import 'auth_ui.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-final AuthService _authService = AuthService();
-
-
-Future<void> _ensureDummyAccounts() async {
-  final dummyAccounts = [
-    {
-      'email': 'test1@example.com',
-      'password': 'password123',
-      'name': 'Test User1',
-    },
-    {
-      'email': 'test2@example.com',
-      'password': 'password456',
-      'name': 'Test User2',
-    },
-  ];
-
-  for (var acct in dummyAccounts) {
-    try {
-      await _authService.register(
-        name: acct['name']!,
-        email: acct['email']!,
-        role: '',
-        phone: '',
-        password: acct['password']!,
-      );
-    } catch (e) {
-      // Ignore errors (e.g., duplicate accounts).
-    }
-  }
-}
+import 'services/auth_service.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await _ensureDummyAccounts();
-  runApp(const MyApp());
+  // Restore session from local storage before rendering anything
+  await AuthService().loadSession();
+  runApp(const CanteenApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CanteenApp extends StatelessWidget {
+  const CanteenApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Test',
+      title: 'Canteen App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      routes: {
-        '/login': (context) => const AuthPage(),
-        '/register': (context) => const RegisterPage(),
-        '/home': (context) => const MyHomePage(title: 'Flutter Demo Home Page'),
-      },
-      // Use the login page as the default entry point.
-      home: const AuthPage(),
-    );
-  }
-}
-
-// Keep the existing MyHomePage unchanged.
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamed('/login'),
-              child: const Text('Auth UI'),
-            ),
-          ],
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+        useMaterial3: true,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      // Auth gate: show Home if session exists, otherwise Login
+      home: AuthService().isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }
