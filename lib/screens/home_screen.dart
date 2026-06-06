@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../services/canteen_service.dart';
-// import '../services/auth_service.dart';
 import 'stall_detail_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
