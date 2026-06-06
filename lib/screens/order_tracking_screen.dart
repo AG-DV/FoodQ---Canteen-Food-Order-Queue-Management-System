@@ -41,9 +41,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Future<void> _fetchOrder({bool silent = false}) async {
     final auth = AuthService();
+    await auth.loadSession();
     try {
       final order = await CanteenService()
-          .getOrder(auth.uid!, auth.idToken!, widget.orderId);
+          .getOrder(auth.currentUserId!, widget.orderId);
       if (!mounted) return;
       setState(() {
         _order = order;
@@ -58,8 +59,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Future<void> _confirmPickup() async {
     final auth = AuthService();
+    await auth.loadSession();
     await CanteenService()
-        .confirmPickup(auth.uid!, auth.idToken!, widget.orderId);
+        .confirmPickup(auth.currentUserId!, widget.orderId);
     await _fetchOrder();
   }
 

@@ -13,6 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   bool _saving = false;
   Map<String, dynamic>? _profile;
+  final AuthService _auth = AuthService();
 
   @override
   void initState() {
@@ -28,7 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final data = await AuthService().getProfile();
+      await _auth.loadSession();
+      final data = await _auth.getProfile(_auth.currentUserId!);
       setState(() {
         _profile = data;
         _nameCtrl.text = data['name'] ?? '';
@@ -47,7 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_nameCtrl.text.trim().isEmpty) return;
     setState(() => _saving = true);
     try {
-      await AuthService().updateProfile(name: _nameCtrl.text.trim());
+      await _auth.loadSession();
+      await _auth.updateProfile(userId: _auth.currentUserId!, name: _nameCtrl.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

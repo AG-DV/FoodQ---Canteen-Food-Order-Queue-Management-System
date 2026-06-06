@@ -61,9 +61,9 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _placing = true);
     try {
       final auth = AuthService();
+      await auth.loadSession();
       final orderId = await CanteenService().placeOrder(
-        uid: auth.uid!,
-        idToken: auth.idToken!,
+        userId: auth.currentUserId!,
         canteenId: widget.canteenId,
         stallId: widget.stall.id,
         stallName: widget.stall.name,

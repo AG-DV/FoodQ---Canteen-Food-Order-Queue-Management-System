@@ -23,9 +23,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _loadOrders() async {
     final auth = AuthService();
+    await auth.loadSession();
     try {
       final orders =
-          await CanteenService().getOrderHistory(auth.uid!, auth.idToken!);
+          await CanteenService().getOrderHistory(auth.currentUserId!);
       setState(() {
         _orders = orders;
         _loading = false;

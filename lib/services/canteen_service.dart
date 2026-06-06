@@ -58,8 +58,7 @@ class CanteenService {
 
   /// Places a new order under /orders/{uid}/{orderId}
   Future<String> placeOrder({
-    required String uid,
-    required String idToken,
+    required String userId,
     required String canteenId,
     required String stallId,
     required String stallName,
@@ -92,7 +91,7 @@ class CanteenService {
     };
 
     final res = await http.put(
-      Uri.parse('$_dbUrl/orders/$uid/$orderId.json?auth=$idToken'),
+      Uri.parse('$_dbUrl/orders/$userId/$orderId.json?'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(orderData),
     );
@@ -100,18 +99,18 @@ class CanteenService {
 
     // Also write to /stall_orders/{stallId}/{orderId} so vendor can see it
     await http.put(
-      Uri.parse('$_dbUrl/stall_orders/$stallId/$orderId.json?auth=$idToken'),
+      Uri.parse('$_dbUrl/stall_orders/$stallId/$orderId.json?'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({...orderData, 'customerId': uid}),
+      body: jsonEncode({...orderData, 'customerId': userId}),
     );
 
     return orderId;
   }
 
   /// Fetches a single order (for live tracking via polling)
-  Future<Order?> getOrder(String uid, String idToken, String orderId) async {
+  Future<Order?> getOrder(String userId, String orderId) async {
     final res = await http.get(
-        Uri.parse('$_dbUrl/orders/$uid/$orderId.json?auth=$idToken'));
+        Uri.parse('$_dbUrl/orders/$userId/$orderId.json'));
     if (res.statusCode != 200) return null;
     final data = jsonDecode(res.body);
     if (data == null) return null;
@@ -119,9 +118,9 @@ class CanteenService {
   }
 
   /// Fetches all orders for the customer (order history)
-  Future<List<Order>> getOrderHistory(String uid, String idToken) async {
+  Future<List<Order>> getOrderHistory(String userId) async {
     final res = await http
-        .get(Uri.parse('$_dbUrl/orders/$uid.json?auth=$idToken'));
+        .get(Uri.parse('$_dbUrl/orders/$userId.json'));
     if (res.statusCode != 200) throw Exception('Failed to load orders');
     final data = jsonDecode(res.body);
     if (data == null) return [];
@@ -136,9 +135,9 @@ class CanteenService {
 
   /// Marks a completed order as picked up (sets status to completed)
   Future<void> confirmPickup(
-      String uid, String idToken, String orderId) async {
+      String userId, String orderId) async {
     await http.patch(
-      Uri.parse('$_dbUrl/orders/$uid/$orderId.json?auth=$idToken'),
+      Uri.parse('$_dbUrl/orders/$userId/$orderId.json'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'status': 'completed'}),
     );

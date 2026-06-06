@@ -24,14 +24,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await AuthService().sendPasswordReset(_emailCtrl.text.trim());
-      if (!mounted) return;
-      setState(() => _sent = true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+    //   await AuthService().sendPasswordReset(_emailCtrl.text.trim());
+    //   if (!mounted) return;
+    //   setState(() => _sent = true);
+    // } catch (e) {
+    //   if (!mounted) return;
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+    //   );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
