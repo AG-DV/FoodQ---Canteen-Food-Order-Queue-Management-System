@@ -3,12 +3,22 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
   static const String _dbUrl =
       'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app';
 
   String? currentUserId;
+  String? currentUserRole;
 
   bool get isLoggedIn => currentUserId != null;
+
+  bool get isManager {
+    final role = currentUserRole?.toLowerCase().replaceAll(' ', '_');
+    return role == 'manager' || role == 'canteen_manager';
+  }
 
   Future<void> register({
     required String name,
@@ -37,6 +47,11 @@ class AuthService {
 
     final data = jsonDecode(response.body);
     currentUserId = data['name'];
+    currentUserRole = 'customer';
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currentUserId', currentUserId!);
+    await prefs.setString('currentUserRole', currentUserRole!);
   }
 
   Future<bool> login({
@@ -58,15 +73,19 @@ class AuthService {
     }
 
     for (final user in data.entries) {
-      if (user.value['email'] == email &&
-          user.value['password'] == password) {
+      if (user.value['email'] == email && user.value['password'] == password) {
         currentUserId = user.key;
+        currentUserRole = user.value['role']?.toString() ?? 'customer';
 
         final prefs = await SharedPreferences.getInstance();
 
         await prefs.setString(
           'currentUserId',
           user.key,
+        );
+        await prefs.setString(
+          'currentUserRole',
+          currentUserRole!,
         );
 
         return true;
@@ -76,10 +95,8 @@ class AuthService {
     return false;
   }
 
-  Future<Map<String, dynamic>> getProfile(
-      String userId) async {
-    final url =
-        Uri.parse('$_dbUrl/users/$userId.json');
+  Future<Map<String, dynamic>> getProfile(String userId) async {
+    final url = Uri.parse('$_dbUrl/users/$userId.json');
 
     final response = await http.get(url);
 
@@ -96,8 +113,7 @@ class AuthService {
     required String userId,
     required String name,
   }) async {
-    final url =
-        Uri.parse('$_dbUrl/users/$userId.json');
+    final url = Uri.parse('$_dbUrl/users/$userId.json');
 
     final response = await http.patch(
       url,
@@ -115,8 +131,7 @@ class AuthService {
   }
 
   Future<void> deleteUser(String userId) async {
-    final url =
-        Uri.parse('$_dbUrl/users/$userId.json');
+    final url = Uri.parse('$_dbUrl/users/$userId.json');
 
     final response = await http.delete(url);
 
@@ -127,16 +142,18 @@ class AuthService {
 
   Future<void> logout() async {
     currentUserId = null;
+    currentUserRole = null;
 
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.remove('currentUserId');
+    await prefs.remove('currentUserRole');
   }
 
   Future<void> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
 
-    currentUserId =
-        prefs.getString('currentUserId');
+    currentUserId = prefs.getString('currentUserId');
+    currentUserRole = prefs.getString('currentUserRole');
   }
 }

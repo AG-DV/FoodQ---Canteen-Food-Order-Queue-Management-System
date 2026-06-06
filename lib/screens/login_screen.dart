@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
+import 'manager/manager_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,20 +30,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final success =await AuthService().login(
+      final auth = AuthService();
+      final success = await auth.login(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
       if (!mounted) return;
 
-      if (success){
+      if (success) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) =>
+                auth.isManager ? const ManagerHomeScreen() : const HomeScreen(),
+          ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Invalid email or password'),
           backgroundColor: Colors.red,
         ));
@@ -86,8 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                    validator: (v) => (v == null || !v.contains('@'))
+                        ? 'Enter a valid email'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -97,19 +102,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(
+                            _obscure ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
+                    validator: (v) => (v == null || v.length < 6)
+                        ? 'Minimum 6 characters'
+                        : null,
                   ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen()),
                       ),
                       child: const Text('Forgot Password?'),
                     ),
@@ -136,7 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextButton(
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterScreen()),
                         ),
                         child: const Text('Register'),
                       ),

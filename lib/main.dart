@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/manager/manager_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +24,16 @@ class CanteenApp extends StatelessWidget {
         useMaterial3: true,
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
       // Auth gate: show Home if session exists, otherwise Login
-      home: AuthService().isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      home: !AuthService().isLoggedIn
+          ? const LoginScreen()
+          : AuthService().isManager
+              ? const ManagerHomeScreen()
+              : const HomeScreen(),
     );
   }
 }
