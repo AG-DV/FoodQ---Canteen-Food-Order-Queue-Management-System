@@ -283,42 +283,43 @@ class _StallDetailScreenState extends State<StallDetailScreen> {
 
   Widget _buildCartBar() {
     return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade700,
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: Colors.white,
-              child: Text('$_cartCount',
-                  style: const TextStyle(
-                      color: Colors.orange,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold)),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: _goToCart,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade700,
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
             ),
-            const SizedBox(width: 12),
-            const Text('View Cart',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-            const Spacer(),
-            Text('RM ${_cartTotal.toStringAsFixed(2)}',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: _goToCart,
-              child: const Icon(Icons.arrow_forward_ios,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.white,
+                  child: Text('$_cartCount',
+                      style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                const Text('View Cart',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+                const Spacer(),
+                Text('RM ${_cartTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),            
+                const Icon(Icons.arrow_forward_ios,
                   color: Colors.white, size: 18),
+              ]),
             ),
-          ],
         ),
-      ),
-    );
+      ));
   }
 }
