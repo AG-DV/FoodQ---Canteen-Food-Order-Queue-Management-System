@@ -4,6 +4,7 @@ import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'manager/manager_home_screen.dart';
+import '../features/vendor/vendor_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,25 +32,23 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     try {
       final auth = AuthService();
-      final success = await auth.login(
+      await auth.login(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
       if (!mounted) return;
-
-      if (success) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                auth.isManager ? const ManagerHomeScreen() : const HomeScreen(),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Invalid email or password'),
-          backgroundColor: Colors.red,
-        ));
+      switch (auth.role) {
+        case 'vendor':
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const VendorHomeScreen()));
+          break;
+        case 'manager':
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const ManagerHomeScreen()));
+          break;
+        default:
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()));
       }
     } catch (e) {
       if (!mounted) return;
@@ -78,9 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Welcome Back',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
@@ -90,9 +90,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    validator: (v) => (v == null || !v.contains('@'))
-                        ? 'Enter a valid email'
-                        : null,
+                    validator: (v) =>
+                        (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -102,23 +101,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                            _obscure ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) => (v == null || v.length < 6)
-                        ? 'Minimum 6 characters'
-                        : null,
+                    validator: (v) =>
+                        (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
                   ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen()),
-                      ),
+                      onPressed: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
                       child: const Text('Forgot Password?'),
                     ),
                   ),
@@ -129,11 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Text('Login'),
                   ),
                   const SizedBox(height: 16),
@@ -142,11 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Text("Don't have an account?"),
                       TextButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterScreen()),
-                        ),
+                        onPressed: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => const RegisterScreen())),
                         child: const Text('Register'),
                       ),
                     ],

@@ -2,61 +2,57 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../../models/models.dart';
+import '../../services/auth_service.dart';
 
-// Import the same constants used in auth_service.dart
-// Replace with your actual values if not already set
-const String _dbUrl = 'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app/';
+const String _dbUrl =
+    'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
 class CanteenService {
   static final CanteenService _instance = CanteenService._internal();
   factory CanteenService() => _instance;
   CanteenService._internal();
 
-  // ─── Canteens ─────────────────────────────────────────────────────────────
+  String get _token => AuthService().idToken ?? '';
 
   Future<List<Canteen>> getCanteens() async {
-    final res = await http.get(Uri.parse('$_dbUrl/canteens.json'));
+    final res = await http.get(
+      Uri.parse('$_dbUrl/canteens.json?auth=$_token'),
+    );
     if (res.statusCode != 200) throw Exception('Failed to load canteens');
     final data = jsonDecode(res.body);
     if (data == null) return [];
-    final map = Map<String, dynamic>.from(data);
-    return map.entries
+    return Map<String, dynamic>.from(data)
+        .entries
         .map((e) => Canteen.fromMap(e.key, Map<dynamic, dynamic>.from(e.value)))
         .toList();
   }
 
-  // ─── Stalls ───────────────────────────────────────────────────────────────
-
   Future<List<Stall>> getStalls(String canteenId) async {
-    final res =
-        await http.get(Uri.parse('$_dbUrl/canteens/$canteenId/stalls.json'));
+    final res = await http.get(
+      Uri.parse('$_dbUrl/canteens/$canteenId/stalls.json?auth=$_token'),
+    );
     if (res.statusCode != 200) throw Exception('Failed to load stalls');
     final data = jsonDecode(res.body);
     if (data == null) return [];
-    final map = Map<String, dynamic>.from(data);
-    return map.entries
+    return Map<String, dynamic>.from(data)
+        .entries
         .map((e) => Stall.fromMap(e.key, Map<dynamic, dynamic>.from(e.value)))
         .toList();
   }
 
-  // ─── Menu ─────────────────────────────────────────────────────────────────
-
   Future<List<MenuItem>> getMenu(String canteenId, String stallId) async {
     final res = await http.get(
-        Uri.parse('$_dbUrl/canteens/$canteenId/stalls/$stallId/menu.json'));
+      Uri.parse('$_dbUrl/canteens/$canteenId/stalls/$stallId/menu.json?auth=$_token'),
+    );
     if (res.statusCode != 200) throw Exception('Failed to load menu');
     final data = jsonDecode(res.body);
     if (data == null) return [];
-    final map = Map<String, dynamic>.from(data);
-    return map.entries
-        .map((e) =>
-            MenuItem.fromMap(e.key, Map<dynamic, dynamic>.from(e.value)))
+    return Map<String, dynamic>.from(data)
+        .entries
+        .map((e) => MenuItem.fromMap(e.key, Map<dynamic, dynamic>.from(e.value)))
         .toList();
   }
 
-  // ─── Orders ───────────────────────────────────────────────────────────────
-
-  /// Places a new order under /orders/{uid}/{orderId}
   Future<String> placeOrder({
     required String userId,
     required String canteenId,
@@ -67,77 +63,74 @@ class CanteenService {
     required String note,
   }) async {
     final total = cartItems.fold(0.0, (sum, c) => sum + c.subtotal);
-    final orderId =
-        'ORD${DateTime.now().millisecondsSinceEpoch}';
+    final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch}';
     final pickupCode = (1000 + Random().nextInt(9000)).toString();
 
     final orderData = {
       'stallId': stallId,
       'stallName': stallName,
       'canteenId': canteenId,
-      'items': cartItems
-          .map((c) => {
-                'name': c.item.name,
-                'price': c.item.price,
-                'quantity': c.quantity,
-              })
-          .toList(),
+      'customerId': userId,
+      'items': cartItems.map((c) => {
+            'name': c.item.name,
+            'price': c.item.price,
+            'quantity': c.quantity,
+          }).toList(),
       'total': total,
+      'totalAmount': total,
       'pickupTime': pickupTime,
       'note': note,
       'status': 'pending',
       'pickupCode': pickupCode,
       'createdAt': DateTime.now().toIso8601String(),
+      'updatedAt': DateTime.now().toIso8601String(),
     };
 
     final res = await http.put(
-      Uri.parse('$_dbUrl/orders/$userId/$orderId.json?'),
+      Uri.parse('$_dbUrl/orders/$userId/$orderId.json?auth=$_token'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(orderData),
     );
     if (res.statusCode != 200) throw Exception('Failed to place order');
 
-    // Also write to /stall_orders/{stallId}/{orderId} so vendor can see it
+    // Also write to /stall_orders/{stallId}/{orderId} for vendor
     await http.put(
-      Uri.parse('$_dbUrl/stall_orders/$stallId/$orderId.json?'),
+      Uri.parse('$_dbUrl/stall_orders/$stallId/$orderId.json?auth=$_token'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({...orderData, 'customerId': userId}),
+      body: jsonEncode(orderData),
     );
 
     return orderId;
   }
 
-  /// Fetches a single order (for live tracking via polling)
   Future<Order?> getOrder(String userId, String orderId) async {
     final res = await http.get(
-        Uri.parse('$_dbUrl/orders/$userId/$orderId.json'));
+      Uri.parse('$_dbUrl/orders/$userId/$orderId.json?auth=$_token'),
+    );
     if (res.statusCode != 200) return null;
     final data = jsonDecode(res.body);
     if (data == null) return null;
     return Order.fromMap(orderId, Map<dynamic, dynamic>.from(data));
   }
 
-  /// Fetches all orders for the customer (order history)
   Future<List<Order>> getOrderHistory(String userId) async {
-    final res = await http
-        .get(Uri.parse('$_dbUrl/orders/$userId.json'));
+    final res = await http.get(
+      Uri.parse('$_dbUrl/orders/$userId.json?auth=$_token'),
+    );
     if (res.statusCode != 200) throw Exception('Failed to load orders');
     final data = jsonDecode(res.body);
     if (data == null) return [];
-    final map = Map<String, dynamic>.from(data);
-    final orders = map.entries
+    final orders = Map<String, dynamic>.from(data)
+        .entries
         .map((e) => Order.fromMap(e.key, Map<dynamic, dynamic>.from(e.value)))
         .toList();
-    // Newest first
     orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return orders;
   }
 
-  /// Marks a completed order as picked up (sets status to completed)
-  Future<void> confirmPickup(
-      String userId, String orderId) async {
+  Future<void> confirmPickup(String userId, String orderId) async {
     await http.patch(
-      Uri.parse('$_dbUrl/orders/$userId/$orderId.json'),
+      Uri.parse('$_dbUrl/orders/$userId/$orderId.json?auth=$_token'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'status': 'completed'}),
     );

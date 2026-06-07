@@ -23,14 +23,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _loadOrders() async {
     final auth = AuthService();
-    await auth.loadSession();
     try {
-      final orders =
-          await CanteenService().getOrderHistory(auth.currentUserId!);
-      setState(() {
-        _orders = orders;
-        _loading = false;
-      });
+      final orders = await CanteenService().getOrderHistory(auth.uid!);
+      setState(() { _orders = orders; _loading = false; });
     } catch (e) {
       setState(() => _loading = false);
       if (!mounted) return;
@@ -41,16 +36,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'pending':
-        return Colors.orange;
-      case 'preparing':
-        return Colors.blue;
-      case 'ready':
-        return Colors.green;
-      case 'completed':
-        return Colors.grey;
-      default:
-        return Colors.grey;
+      case 'pending':   return Colors.orange;
+      case 'preparing': return Colors.blue;
+      case 'ready':     return Colors.green;
+      default:          return Colors.grey;
     }
   }
 
@@ -62,10 +51,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() => _loading = true);
-              _loadOrders();
-            },
+            onPressed: () { setState(() => _loading = true); _loadOrders(); },
           )
         ],
       ),
@@ -78,8 +64,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     children: [
                       Icon(Icons.receipt_long, size: 64, color: Colors.grey),
                       SizedBox(height: 12),
-                      Text('No orders yet',
-                          style: TextStyle(color: Colors.grey)),
+                      Text('No orders yet', style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -96,8 +81,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           ? () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => OrderTrackingScreen(
-                                      orderId: _orders[i].id),
+                                  builder: (_) =>
+                                      OrderTrackingScreen(orderId: _orders[i].id),
                                 ),
                               )
                           : null,
@@ -113,17 +98,11 @@ class _OrderCard extends StatelessWidget {
   final Color statusColor;
   final VoidCallback? onTrack;
 
-  const _OrderCard({
-    required this.order,
-    required this.statusColor,
-    this.onTrack,
-  });
+  const _OrderCard({required this.order, required this.statusColor, this.onTrack});
 
   @override
   Widget build(BuildContext context) {
-    final itemNames =
-        order.items.map((i) => i['name'] as String).join(' • ');
-
+    final itemNames = order.items.map((i) => i['name'] as String).join(' • ');
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -136,22 +115,18 @@ class _OrderCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(order.stallName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     order.status[0].toUpperCase() + order.status.substring(1),
                     style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12),
+                        color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
               ],
@@ -159,8 +134,7 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(itemNames,
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
+                maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
             Text(order.pickupTime,
                 style: const TextStyle(color: Colors.grey, fontSize: 12)),
@@ -168,14 +142,10 @@ class _OrderCard extends StatelessWidget {
             Row(
               children: [
                 Text('RM ${order.total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 if (onTrack != null)
-                  OutlinedButton(
-                    onPressed: onTrack,
-                    child: const Text('Track Order'),
-                  ),
+                  OutlinedButton(onPressed: onTrack, child: const Text('Track Order')),
               ],
             ),
           ],

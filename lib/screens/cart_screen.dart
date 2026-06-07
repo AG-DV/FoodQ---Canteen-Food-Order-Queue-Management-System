@@ -138,7 +138,7 @@ class _CartScreenState extends State<CartScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _pickupTime,
+              initialValue: _pickupTime,
               decoration: const InputDecoration(),
               items: _timeSlots
                   .map((t) =>

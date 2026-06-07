@@ -13,7 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   bool _saving = false;
   Map<String, dynamic>? _profile;
-  final AuthService _auth = AuthService();
+  final _auth = AuthService();
 
   @override
   void initState() {
@@ -29,8 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      await _auth.loadSession();
-      final data = await _auth.getProfile(_auth.currentUserId!);
+      final data = await _auth.getProfile();
       setState(() {
         _profile = data;
         _nameCtrl.text = data['name'] ?? '';
@@ -49,14 +48,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_nameCtrl.text.trim().isEmpty) return;
     setState(() => _saving = true);
     try {
-      await _auth.loadSession();
-      await _auth.updateProfile(userId: _auth.currentUserId!, name: _nameCtrl.text.trim());
+      await _auth.updateProfile(name: _nameCtrl.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Profile updated'), backgroundColor: Colors.green),
       );
     } catch (e) {
       if (!mounted) return;
@@ -86,7 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Icon(Icons.person, size: 48, color: Colors.white),
                     ),
                     const SizedBox(height: 24),
-                    // Read-only email
                     TextFormField(
                       initialValue: _profile?['email'] ?? '',
                       readOnly: true,
@@ -97,7 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Editable name
                     TextFormField(
                       controller: _nameCtrl,
                       textCapitalization: TextCapitalization.words,
@@ -122,11 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Text('Save Changes'),
                     ),
                   ],
