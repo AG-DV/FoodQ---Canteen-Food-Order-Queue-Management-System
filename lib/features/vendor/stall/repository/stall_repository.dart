@@ -12,14 +12,37 @@ class StallRepository {
   String get _uid => _auth.uid ?? '';
 
   Future<StallModel?> getMyStall() async {
+    // First try querying by ownerId
     final res = await http.get(
-      Uri.parse('$_dbUrl/stalls.json?auth=$_token&orderBy="ownerId"&equalTo="$_uid"'),
+      Uri.parse(
+          '$_dbUrl/stalls.json?auth=$_token&orderBy="ownerId"&equalTo="$_uid"'),
     );
-    if (res.statusCode != 200) return null;
-    final data = jsonDecode(res.body);
-    if (data == null || data is! Map) return null;
-    final entry = data.entries.first;
-    return StallModel.fromMap(Map<String, dynamic>.from(entry.value), entry.key);
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data != null && data is Map && data.isNotEmpty) {
+        final entry = (data as Map).entries.first;
+        return StallModel.fromMap(
+            Map<String, dynamic>.from(entry.value), entry.key);
+      }
+    }
+
+    // Fallback: fetch all stalls and filter in Dart
+    // (used when RTDB index is not set up yet)
+    final fallback = await http.get(
+      Uri.parse('$_dbUrl/stalls.json?auth=$_token'),
+    );
+    if (fallback.statusCode != 200) return null;
+    final allData = jsonDecode(fallback.body);
+    if (allData == null || allData is! Map) return null;
+
+    for (final entry in (allData as Map).entries) {
+      final stall = Map<String, dynamic>.from(entry.value);
+      if (stall['ownerId'] == _uid) {
+        return StallModel.fromMap(stall, entry.key);
+      }
+    }
+    return null;
   }
 
   Future<String?> createStall(StallModel stall) async {

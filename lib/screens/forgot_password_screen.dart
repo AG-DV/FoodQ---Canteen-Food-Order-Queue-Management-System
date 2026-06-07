@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -23,14 +24,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-    //   await AuthService().sendPasswordReset(_emailCtrl.text.trim());
-    //   if (!mounted) return;
-    //   setState(() => _sent = true);
-    // } catch (e) {
-    //   if (!mounted) return;
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-    //   );
+      await AuthService().sendPasswordReset(_emailCtrl.text.trim());
+      if (!mounted) return;
+      setState(() => _sent = true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -85,8 +86,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : const Text('Send Reset Link'),
           ),
         ],
@@ -99,7 +100,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(Icons.mark_email_read_outlined, size: 72, color: Colors.green),
+        const Icon(Icons.mark_email_read_outlined,
+            size: 72, color: Colors.green),
         const SizedBox(height: 16),
         Text(
           'Email Sent!',

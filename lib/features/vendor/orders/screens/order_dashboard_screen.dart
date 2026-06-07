@@ -44,9 +44,12 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
     super.dispose();
   }
 
-  int get _pendingCount => _orders.where((o) => o.status == OrderStatus.pending).length;
-  int get _preparingCount => _orders.where((o) => o.status == OrderStatus.preparing).length;
-  int get _readyCount => _orders.where((o) => o.status == OrderStatus.ready).length;
+  int get _pendingCount =>
+      _orders.where((o) => o.status == OrderStatus.pending).length;
+  int get _preparingCount =>
+      _orders.where((o) => o.status == OrderStatus.preparing).length;
+  int get _readyCount =>
+      _orders.where((o) => o.status == OrderStatus.ready).length;
 
   Future<void> _updateStatus(OrderModel order, OrderStatus newStatus) async {
     setState(() {
@@ -54,7 +57,12 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
       if (idx != -1) _orders[idx] = order.copyWith(status: newStatus);
     });
     try {
-      await _repo.updateOrderStatus(order.orderId, newStatus);
+      await _repo.updateOrderStatus(
+        order.orderId,
+        newStatus,
+        customerId: order.customerId,
+        stallId: widget.stallId,
+      );
       final token = AuthService().idToken ?? '';
       if (newStatus == OrderStatus.preparing) {
         await NotificationService.notifyOrderAccepted(
@@ -92,14 +100,18 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
   }
 
   Future<void> _confirmReject(OrderModel order) async {
-    final shortId = order.orderId.substring(0, 6).toUpperCase();
+    final shortId = order.orderId.length >= 6
+        ? order.orderId.substring(0, 6).toUpperCase()
+        : order.orderId.toUpperCase();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reject Order?'),
         content: Text('Reject order #$shortId?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
@@ -161,15 +173,19 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
       );
     }
 
-    final pending = _orders.where((o) => o.status == OrderStatus.pending).toList();
-    final preparing = _orders.where((o) => o.status == OrderStatus.preparing).toList();
-    final ready = _orders.where((o) => o.status == OrderStatus.ready).toList();
+    final pending =
+        _orders.where((o) => o.status == OrderStatus.pending).toList();
+    final preparing =
+        _orders.where((o) => o.status == OrderStatus.preparing).toList();
+    final ready =
+        _orders.where((o) => o.status == OrderStatus.ready).toList();
 
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
         if (pending.isNotEmpty) ...[
-          _SectionHeader(title: 'New Orders', count: pending.length, color: Colors.orange),
+          _SectionHeader(
+              title: 'New Orders', count: pending.length, color: Colors.orange),
           ...pending.map((o) => _OrderCard(
                 order: o,
                 onAccept: () => _updateStatus(o, OrderStatus.preparing),
@@ -177,17 +193,22 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
               )),
         ],
         if (preparing.isNotEmpty) ...[
-          _SectionHeader(title: 'Preparing', count: preparing.length, color: Colors.blue),
+          _SectionHeader(
+              title: 'Preparing', count: preparing.length, color: Colors.blue),
           ...preparing.map((o) => _OrderCard(
                 order: o,
                 onMarkReady: () => _updateStatus(o, OrderStatus.ready),
               )),
         ],
         if (ready.isNotEmpty) ...[
-          _SectionHeader(title: 'Ready for Pickup', count: ready.length, color: Colors.green),
+          _SectionHeader(
+              title: 'Ready for Pickup',
+              count: ready.length,
+              color: Colors.green),
           ...ready.map((o) => _OrderCard(
                 order: o,
-                onMarkCollected: () => _updateStatus(o, OrderStatus.completed),
+                onMarkCollected: () =>
+                    _updateStatus(o, OrderStatus.completed),
               )),
         ],
       ],
@@ -197,7 +218,8 @@ class _OrderDashboardScreenState extends State<OrderDashboardScreen> {
 
 class _StatusSummaryBar extends StatelessWidget {
   final int pending, preparing, ready;
-  const _StatusSummaryBar({required this.pending, required this.preparing, required this.ready});
+  const _StatusSummaryBar(
+      {required this.pending, required this.preparing, required this.ready});
 
   @override
   Widget build(BuildContext context) {
@@ -219,15 +241,19 @@ class _StatChip extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
-  const _StatChip({required this.label, required this.count, required this.color});
+  const _StatChip(
+      {required this.label, required this.count, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
         children: [
-          Text('$count', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text('$count',
+              style: TextStyle(
+                  fontSize: 28, fontWeight: FontWeight.bold, color: color)),
+          Text(label,
+              style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
@@ -238,7 +264,8 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final int count;
   final Color color;
-  const _SectionHeader({required this.title, required this.count, required this.color});
+  const _SectionHeader(
+      {required this.title, required this.count, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -248,19 +275,26 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Container(
             width: 4, height: 18,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(width: 8),
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text('$count',
-                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -291,12 +325,16 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shortId = order.orderId.substring(0, 6).toUpperCase();
+    final shortId = order.orderId.length >= 6
+        ? order.orderId.substring(0, 6).toUpperCase()
+        : order.orderId.toUpperCase();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: _statusColor.withValues(alpha: 0.4), width: 1.5),
+        side:
+            BorderSide(color: _statusColor.withValues(alpha: 0.4), width: 1.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -305,7 +343,9 @@ class _OrderCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('#$shortId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('#$shortId',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
                 const Spacer(),
                 _StatusBadge(status: order.status),
               ],
@@ -319,20 +359,24 @@ class _OrderCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Text('${item.quantity}x',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: const TextStyle(fontSize: 14)),
+                            Text(item.name,
+                                style: const TextStyle(fontSize: 14)),
                             if (item.customization.isNotEmpty)
                               Text('📝 ${item.customization}',
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                       ),
-                      Text('RM ${(item.price * item.quantity).toStringAsFixed(2)}',
+                      Text(
+                          'RM ${(item.price * item.quantity).toStringAsFixed(2)}',
                           style: const TextStyle(fontSize: 13)),
                     ],
                   ),
@@ -340,13 +384,18 @@ class _OrderCard extends StatelessWidget {
             const Divider(height: 16),
             Row(
               children: [
-                const Text('Total', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('Total',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const Spacer(),
                 Text('RM ${order.totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
-            if (onAccept != null || onReject != null || onMarkReady != null || onMarkCollected != null) ...[
+            if (onAccept != null ||
+                onReject != null ||
+                onMarkReady != null ||
+                onMarkCollected != null) ...[
               const SizedBox(height: 12),
               _buildActions(),
             ],
@@ -362,14 +411,16 @@ class _OrderCard extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+              style:
+                  OutlinedButton.styleFrom(foregroundColor: Colors.red),
               onPressed: onReject,
               child: const Text('Reject'),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: FilledButton(onPressed: onAccept, child: const Text('Accept')),
+            child: FilledButton(
+                onPressed: onAccept, child: const Text('Accept')),
           ),
         ],
       );
@@ -423,7 +474,8 @@ class _StatusBadge extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(label,
-          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+          style: TextStyle(
+              color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -443,9 +495,11 @@ class _ErrorView extends StatelessWidget {
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 12),
             const Text('Failed to load orders',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                style:
+                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(error, textAlign: TextAlign.center,
+            Text(error,
+                textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.grey)),
           ],
         ),
