@@ -3,6 +3,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
+  final http.Client _client;
+
+  // Add this named constructor
+  AuthService.withClient(this._client);
+
+  // Change the default constructor to use http.Client() 
+  AuthService() : _client = http.Client();
+
   static const String _dbUrl =
       'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app';
 
@@ -17,7 +25,7 @@ class AuthService {
   }) async {
     final url = Uri.parse('$_dbUrl/users.json');
 
-    final response = await http.post(
+    final response = await _client.post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -45,7 +53,7 @@ class AuthService {
   }) async {
     final url = Uri.parse('$_dbUrl/users.json');
 
-    final response = await http.get(url);
+    final response = await _client.get(url);
 
     if (response.statusCode >= 400) {
       throw Exception('Failed to login');
@@ -81,7 +89,7 @@ class AuthService {
     final url =
         Uri.parse('$_dbUrl/users/$userId.json');
 
-    final response = await http.get(url);
+    final response = await _client.get(url);
 
     if (response.statusCode >= 400) {
       throw Exception('Failed to load profile');
@@ -99,7 +107,7 @@ class AuthService {
     final url =
         Uri.parse('$_dbUrl/users/$userId.json');
 
-    final response = await http.patch(
+    final response = await _client.patch(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +126,7 @@ class AuthService {
     final url =
         Uri.parse('$_dbUrl/users/$userId.json');
 
-    final response = await http.delete(url);
+    final response = await _client.delete(url);
 
     if (response.statusCode >= 400) {
       throw Exception('Failed to delete user');

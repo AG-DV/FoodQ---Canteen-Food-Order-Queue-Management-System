@@ -8,14 +8,15 @@ import '../../models/models.dart';
 const String _dbUrl = 'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
 class CanteenService {
-  static final CanteenService _instance = CanteenService._internal();
-  factory CanteenService() => _instance;
-  CanteenService._internal();
+  final http.Client _client;
+  CanteenService._internal() : _client = http.Client();
+  // Add this for testing only
+  CanteenService.withClient(this._client);
 
   // ─── Canteens ─────────────────────────────────────────────────────────────
 
   Future<List<Canteen>> getCanteens() async {
-    final res = await http.get(Uri.parse('$_dbUrl/canteens.json'));
+    final res = await _client.get(Uri.parse('$_dbUrl/canteens.json'));
     if (res.statusCode != 200) throw Exception('Failed to load canteens');
     final data = jsonDecode(res.body);
     if (data == null) return [];
@@ -29,7 +30,7 @@ class CanteenService {
 
   Future<List<Stall>> getStalls(String canteenId) async {
     final res =
-        await http.get(Uri.parse('$_dbUrl/canteens/$canteenId/stalls.json'));
+        await _client.get(Uri.parse('$_dbUrl/canteens/$canteenId/stalls.json'));
     if (res.statusCode != 200) throw Exception('Failed to load stalls');
     final data = jsonDecode(res.body);
     if (data == null) return [];
@@ -42,7 +43,7 @@ class CanteenService {
   // ─── Menu ─────────────────────────────────────────────────────────────────
 
   Future<List<MenuItem>> getMenu(String canteenId, String stallId) async {
-    final res = await http.get(
+    final res = await _client.get(
         Uri.parse('$_dbUrl/canteens/$canteenId/stalls/$stallId/menu.json'));
     if (res.statusCode != 200) throw Exception('Failed to load menu');
     final data = jsonDecode(res.body);
@@ -90,7 +91,7 @@ class CanteenService {
       'createdAt': DateTime.now().toIso8601String(),
     };
 
-    final res = await http.put(
+    final res = await _client.put(
       Uri.parse('$_dbUrl/orders/$userId/$orderId.json?'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(orderData),
@@ -98,7 +99,7 @@ class CanteenService {
     if (res.statusCode != 200) throw Exception('Failed to place order');
 
     // Also write to /stall_orders/{stallId}/{orderId} so vendor can see it
-    await http.put(
+    await _client.put(
       Uri.parse('$_dbUrl/stall_orders/$stallId/$orderId.json?'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({...orderData, 'customerId': userId}),
@@ -109,7 +110,7 @@ class CanteenService {
 
   /// Fetches a single order (for live tracking via polling)
   Future<Order?> getOrder(String userId, String orderId) async {
-    final res = await http.get(
+    final res = await _client.get(
         Uri.parse('$_dbUrl/orders/$userId/$orderId.json'));
     if (res.statusCode != 200) return null;
     final data = jsonDecode(res.body);
@@ -119,8 +120,8 @@ class CanteenService {
 
   /// Fetches all orders for the customer (order history)
   Future<List<Order>> getOrderHistory(String userId) async {
-    final res = await http
-        .get(Uri.parse('$_dbUrl/orders/$userId.json'));
+    final res = await _client.get(
+        Uri.parse('$_dbUrl/orders/$userId.json'));
     if (res.statusCode != 200) throw Exception('Failed to load orders');
     final data = jsonDecode(res.body);
     if (data == null) return [];
@@ -136,7 +137,7 @@ class CanteenService {
   /// Marks a completed order as picked up (sets status to completed)
   Future<void> confirmPickup(
       String userId, String orderId) async {
-    await http.patch(
+    await _client.patch(
       Uri.parse('$_dbUrl/orders/$userId/$orderId.json'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'status': 'completed'}),
