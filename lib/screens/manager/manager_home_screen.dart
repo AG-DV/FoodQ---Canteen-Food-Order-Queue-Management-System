@@ -5,6 +5,7 @@ import '../../services/manager_service.dart';
 import '../profile_screen.dart';
 import 'manager_tabs.dart';
 
+// Main screen that controls all Manager pages and data.
 class ManagerHomeScreen extends StatefulWidget {
   const ManagerHomeScreen({super.key});
 
@@ -13,6 +14,7 @@ class ManagerHomeScreen extends StatefulWidget {
 }
 
 class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
+  // Service and state values used by the Manager interface.
   final ManagerService _service = ManagerService();
   int _selectedIndex = 0;
   bool _loading = true;
@@ -24,9 +26,11 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Load Manager data when the screen first opens.
     _loadData();
   }
 
+  // Loads the canteen, stall, order and complaint data.
   Future<void> _loadData() async {
     setState(() => _loading = true);
 
@@ -34,10 +38,12 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
       final canteens = await CanteenService().getCanteens();
       if (canteens.isEmpty) throw Exception('No canteen found');
 
+      // The prototype currently uses the first available canteen.
       final canteen = canteens.first;
       final stalls = await _service.getStalls(canteen.id);
       final complaints = await _service.getComplaints();
 
+      // Save the loaded data and rebuild the interface.
       if (!mounted) return;
       setState(() {
         _canteenName = canteen.name;
@@ -46,21 +52,26 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
         _loading = false;
       });
     } catch (e) {
+      // Stop loading and show an error if a request fails.
       if (!mounted) return;
       setState(() => _loading = false);
       _showMessage(e.toString(), error: true);
     }
   }
 
+  // Calculates the total active orders from all stalls.
   int get _activeOrders =>
       _stalls.fold(0, (sum, stall) => sum + stall.activeOrders);
 
+  // Calculates the total number of people in all queues.
   int get _queueCount =>
       _stalls.fold(0, (sum, stall) => sum + stall.queueCount);
 
+  // Counts complaints that have not been resolved.
   int get _openComplaints =>
       _complaints.where((item) => item.status != 'Resolved').length;
 
+  // Generates alerts from high congestion and open complaints.
   List<ManagerAlert> get _alerts {
     final alerts = <ManagerAlert>[];
 
@@ -91,6 +102,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Connect Manager data and callbacks to the five tab pages.
     final pages = [
       managerDashboard(
         stalls: _stalls,
@@ -112,6 +124,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
       managerAlerts(_alerts),
     ];
 
+    // Build the app bar, selected page and bottom navigation.
     return Scaffold(
       appBar: AppBar(
         title: Text(_canteenName),
@@ -168,6 +181,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
     );
   }
 
+  // Sends a redirect notice for a crowded stall.
   Future<void> _sendNotice(String stallName) async {
     try {
       await _service.sendRedirectNotice(stallName);
@@ -177,6 +191,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
     }
   }
 
+  // Opens a notes dialog and updates the selected complaint.
   Future<void> _updateComplaint(
     ManagerComplaint complaint,
     String status,
@@ -204,9 +219,11 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
       ),
     );
     controller.dispose();
+    // Stop when the manager cancels the dialog.
     if (notes == null) return;
 
     try {
+      // Update Firebase before changing the local screen data.
       await _service.updateComplaint(
         complaintId: complaint.id,
         status: status,
@@ -222,6 +239,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
     }
   }
 
+  // Shows a success or error message at the bottom of the screen.
   void _showMessage(String message, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

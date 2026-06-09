@@ -6,14 +6,19 @@ import '../services/auth_service.dart';
 const String _dbUrl =
     'https://foodq-canteen-system-default-rtdb.asia-southeast1.firebasedatabase.app';
 
+// Handles Firebase data operations for the Manager module.
 class ManagerService {
+  // Uses one shared ManagerService instance throughout the app.
   static final ManagerService _instance = ManagerService._internal();
   factory ManagerService() => _instance;
   ManagerService._internal();
 
+  // Gets the current Firebase authentication token.
   String get _token => AuthService().idToken ?? '';
 
+  // Loads stalls and their order statistics for one canteen.
   Future<List<ManagerStall>> getStalls(String canteenId) async {
+    // Read stall details and stall orders from Firebase.
     final stallResponse = await http.get(
       Uri.parse('$_dbUrl/canteens/$canteenId/stalls.json?auth=$_token'),
     );
@@ -21,10 +26,12 @@ class ManagerService {
       Uri.parse('$_dbUrl/stall_orders.json?auth=$_token'),
     );
 
+    // Stop if the main stall request was unsuccessful.
     if (stallResponse.statusCode != 200) {
       throw Exception('Failed to load manager stall data');
     }
 
+    // Convert the Firebase JSON responses into Dart maps.
     final stallData = jsonDecode(stallResponse.body);
     if (stallData == null) return [];
 
@@ -37,6 +44,7 @@ class ManagerService {
 
     final result = <ManagerStall>[];
 
+    // Build one ManagerStall object for every stall.
     for (final entry in stalls.entries) {
       final stall = Map<String, dynamic>.from(entry.value);
       final rawOrders = allOrders[entry.key];
@@ -48,6 +56,7 @@ class ManagerService {
       var weeklyOrders = 0;
       var weeklyRevenue = 0.0;
 
+      // Calculate active orders and the latest seven-day performance.
       for (final value in orders.values) {
         if (value is! Map) continue;
         final order = Map<String, dynamic>.from(value);
@@ -61,6 +70,7 @@ class ManagerService {
         }
       }
 
+      // Add the processed stall to the final result list.
       result.add(ManagerStall(
         id: entry.key,
         name: stall['name']?.toString() ?? 'Unknown Stall',
@@ -76,6 +86,7 @@ class ManagerService {
     return result;
   }
 
+  // Loads all customer complaints from Firebase.
   Future<List<ManagerComplaint>> getComplaints() async {
     final response = await http.get(
       Uri.parse('$_dbUrl/complaints.json?auth=$_token'),
@@ -83,6 +94,7 @@ class ManagerService {
     if (response.statusCode != 200) throw Exception('Failed to load complaints');
     final data = jsonDecode(response.body);
     if (data == null) return [];
+    // Convert each valid Firebase record into a complaint object.
     return Map<String, dynamic>.from(data)
         .entries
         .where((e) => e.value is Map)
@@ -91,6 +103,7 @@ class ManagerService {
         .toList();
   }
 
+  // Updates a complaint's status and resolution notes.
   Future<void> updateComplaint({
     required String complaintId,
     required String status,
@@ -104,6 +117,7 @@ class ManagerService {
     if (response.statusCode >= 400) throw Exception('Failed to update complaint');
   }
 
+  // Creates a notice asking customers to consider another stall.
   Future<void> sendRedirectNotice(String stallName) async {
     final response = await http.post(
       Uri.parse('$_dbUrl/manager_notices.json?auth=$_token'),
@@ -117,7 +131,7 @@ class ManagerService {
     if (response.statusCode >= 400) throw Exception('Failed to send notice');
   }
 
-  // Account management — list all users (manager only)
+  // Loads all user accounts for future manager account management.
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     final response = await http.get(
       Uri.parse('$_dbUrl/users.json?auth=$_token'),
@@ -132,7 +146,7 @@ class ManagerService {
     }).toList();
   }
 
-  // Update a user's role (manager only)
+  // Updates a user's role for future manager account management.
   Future<void> updateUserRole(String uid, String role) async {
     final response = await http.patch(
       Uri.parse('$_dbUrl/users/$uid.json?auth=$_token'),

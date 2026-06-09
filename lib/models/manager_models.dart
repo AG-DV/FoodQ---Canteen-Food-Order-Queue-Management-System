@@ -1,3 +1,4 @@
+// Stores stall data displayed in the Manager module.
 class ManagerStall {
   final String id;
   final String name;
@@ -19,8 +20,10 @@ class ManagerStall {
     required this.isOpen,
   });
 
+  // Estimates two minutes of waiting time for each person in queue.
   int get waitMinutes => queueCount * 2;
 
+  // Converts the queue count into a simple congestion level.
   String get congestionLevel {
     if (queueCount >= 20) return 'High';
     if (queueCount >= 10) return 'Medium';
@@ -28,6 +31,7 @@ class ManagerStall {
   }
 }
 
+// Stores a customer complaint and its resolution details.
 class ManagerComplaint {
   final String id;
   final String stallName;
@@ -47,14 +51,17 @@ class ManagerComplaint {
     required this.resolutionNotes,
   });
 
+  // Converts complaint data from Firebase into a Dart object.
   factory ManagerComplaint.fromMap(
     String id,
     Map<dynamic, dynamic> map,
   ) {
+    // Standardises older complaint status names used in Firebase.
     var status = map['status']?.toString() ?? 'New';
     if (status.toLowerCase() == 'open') status = 'New';
     if (status.toLowerCase() == 'in progress') status = 'In Review';
 
+    // Uses default values when a complaint field is missing.
     return ManagerComplaint(
       id: id,
       stallName: map['stallName']?.toString() ?? 'Unknown Stall',
@@ -69,6 +76,7 @@ class ManagerComplaint {
   }
 }
 
+// Stores an alert generated from congestion or complaint data.
 class ManagerAlert {
   final String title;
   final String message;

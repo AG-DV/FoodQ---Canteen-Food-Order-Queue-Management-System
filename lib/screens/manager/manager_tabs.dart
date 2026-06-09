@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../models/manager_models.dart';
 
+// Defines the callback used to update a complaint.
 typedef ComplaintUpdate = Future<void> Function(
   ManagerComplaint complaint,
   String status,
 );
 
+// Builds the dashboard summary, heatmap and registered stall list.
 Widget managerDashboard({
   required List<ManagerStall> stalls,
   required int activeOrders,
@@ -69,6 +71,7 @@ Widget managerDashboard({
   ]);
 }
 
+// Builds the stall congestion page and redirect notice action.
 Widget managerQueues(
   List<ManagerStall> stalls,
   Future<void> Function(String stallName) sendNotice,
@@ -100,12 +103,14 @@ Widget managerQueues(
   ]);
 }
 
+// Builds the complaint list, filter and resolution actions.
 Widget managerComplaints({
   required List<ManagerComplaint> complaints,
   required String filter,
   required ValueChanged<String> onFilterChanged,
   required ComplaintUpdate onUpdate,
 }) {
+  // Apply the selected complaint status filter.
   final filtered = filter == 'All'
       ? complaints
       : complaints.where((item) => item.status == filter).toList();
@@ -167,7 +172,9 @@ Widget managerComplaints({
   ]);
 }
 
+// Builds the latest seven-day performance report.
 Widget managerReports(List<ManagerStall> stalls) {
+  // Calculate overall revenue, orders and average rating.
   final revenue = stalls.fold(0.0, (sum, stall) => sum + stall.weeklyRevenue);
   final orders = stalls.fold(0, (sum, stall) => sum + stall.weeklyOrders);
   final rating = stalls.isEmpty
@@ -210,6 +217,7 @@ Widget managerReports(List<ManagerStall> stalls) {
   ]);
 }
 
+// Builds the list of automatically generated alerts.
 Widget managerAlerts(List<ManagerAlert> alerts) {
   return _page([
     const _Title('Automated Alerts'),
@@ -232,6 +240,7 @@ Widget managerAlerts(List<ManagerAlert> alerts) {
   ]);
 }
 
+// Provides the same scrollable layout for every Manager tab.
 Widget _page(List<Widget> children) {
   return ListView(
     physics: const AlwaysScrollableScrollPhysics(),
@@ -240,6 +249,7 @@ Widget _page(List<Widget> children) {
   );
 }
 
+// Reusable heading used by the Manager pages.
 class _Title extends StatelessWidget {
   final String text;
   const _Title(this.text);
@@ -256,6 +266,7 @@ class _Title extends StatelessWidget {
   }
 }
 
+// Reusable card used for Dashboard summary values.
 class _Metric extends StatelessWidget {
   final String title;
   final String value;
@@ -281,6 +292,7 @@ class _Metric extends StatelessWidget {
   }
 }
 
+// Reusable coloured text for congestion and complaint status.
 class _Status extends StatelessWidget {
   final String text;
   const _Status(this.text);
@@ -301,6 +313,7 @@ class _Status extends StatelessWidget {
   }
 }
 
+// Reusable message shown when a page has no data.
 class _Empty extends StatelessWidget {
   final String text;
   const _Empty(this.text);
@@ -314,6 +327,7 @@ class _Empty extends StatelessWidget {
   }
 }
 
+// Returns a display colour for each congestion level.
 Color congestionColor(String level) {
   if (level == 'High') return Colors.red;
   if (level == 'Medium') return Colors.orange;
